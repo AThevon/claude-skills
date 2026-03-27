@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Crée une PR complète (rebase, push, create)
+description: Crée ou met à jour une PR complète (rebase, push, create/update)
 allowed-tools: Bash, Read, Edit, Write, Grep
 ---
 
@@ -16,9 +16,9 @@ Crée une Pull Request propre :
 
 2. Vérifie si une PR existe déjà pour cette branche :
    ```bash
-   gh pr view 2>/dev/null
+   gh pr view --json number,title,body,url 2>/dev/null
    ```
-   - Si une PR existe → informer l'utilisateur et proposer `/update-pr` à la place. STOP.
+   Retenir le résultat — on en aura besoin à l'étape 8.
 
 3. Si changements non commités (working tree dirty) :
    ```bash
@@ -57,9 +57,14 @@ Crée une Pull Request propre :
    - PAS de mention de Claude/AI dans la description
    - Explique le "quoi" et le "pourquoi"
 
-8. Crée la PR :
-   ```bash
-   gh pr create --title "..." --body "..."
-   ```
+8. Crée ou met à jour la PR :
+   - **Si aucune PR n'existe** (étape 2 a échoué) → créer :
+     ```bash
+     gh pr create --title "..." --body "..."
+     ```
+   - **Si une PR existe déjà** (étape 2 a retourné une PR) → mettre à jour titre et description :
+     ```bash
+     gh pr edit --title "..." --body "..."
+     ```
 
-9. Affiche le lien de la PR créée
+9. Affiche le lien de la PR (créée ou mise à jour)
