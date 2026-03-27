@@ -8,56 +8,52 @@ Bump la version du projet selon le semantic versioning :
 
 1. Analyse les changements depuis le dernier tag/release :
    ```bash
-   # Trouve le dernier tag
    LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-   # Si pas de tag, regarde tous les commits
    if [ -z "$LAST_TAG" ]; then
      git log --oneline -30
-     git log --stat -15
    else
      git log --oneline $LAST_TAG..HEAD
-     git log --stat $LAST_TAG..HEAD
    fi
    ```
 
 2. Détermine le type de bump selon les changements :
-   - **MAJOR** (x.0.0) : Breaking changes, API incompatibles, refacto majeure
-     - Mots-clés : BREAKING, breaking change, remove, suppression d'API
-   - **MINOR** (0.x.0) : Nouvelles fonctionnalités rétro-compatibles
-     - Mots-clés : feat, add, nouveau, nouvelle feature
-   - **PATCH** (0.0.x) : Bug fixes, corrections, améliorations mineures
-     - Mots-clés : fix, bugfix, correction, typo, refactor mineur
+   - Si l'utilisateur a spécifié le type (ex: `/bump major`, `/bump minor`), l'utiliser directement
+   - Sinon, analyser les commits avec les Conventional Commits :
+     - **MAJOR** (x.0.0) : `BREAKING CHANGE:` dans le body, ou `!` après le type (ex: `feat!:`)
+     - **MINOR** (0.x.0) : commits préfixés `feat:` ou `feat(scope):`
+     - **PATCH** (0.0.x) : `fix:`, `perf:`, `refactor:`, ou tout le reste
+   - En cas de doute, proposer PATCH et demander confirmation
 
-3. Trouve et lis les fichiers de version :
+3. Trouve la version actuelle — utiliser les bons parseurs :
    ```bash
-   # package.json (Node.js)
-   cat package.json 2>/dev/null | grep '"version"'
+   # package.json (Node.js) — parser avec jq si dispo
+   jq -r '.version' package.json 2>/dev/null || grep '"version"' package.json | head -1 | sed 's/.*"version": *"\([^"]*\)".*/\1/'
 
-   # Cargo.toml (Rust)
-   cat Cargo.toml 2>/dev/null | grep '^version'
+   # Cargo.toml (Rust) — version racine uniquement
+   grep '^version' Cargo.toml 2>/dev/null | head -1
 
    # pyproject.toml (Python)
-   cat pyproject.toml 2>/dev/null | grep '^version'
+   grep '^version' pyproject.toml 2>/dev/null | head -1
 
    # VERSION file
    cat VERSION 2>/dev/null
    ```
+   Si plusieurs fichiers de version existent, vérifier qu'ils sont synchronisés. Si incohérence → alerter l'utilisateur.
 
 4. Calcule la nouvelle version :
    - Parse la version actuelle (ex: 1.2.3)
-   - Applique le bump approprié
-   - MAJOR: 1.2.3 → 2.0.0
-   - MINOR: 1.2.3 → 1.3.0
-   - PATCH: 1.2.3 → 1.2.4
+   - Applique le bump :
+     - MAJOR: 1.2.3 → 2.0.0
+     - MINOR: 1.2.3 → 1.3.0
+     - PATCH: 1.2.3 → 1.2.4
 
-5. Met à jour TOUS les fichiers contenant la version :
-   - package.json (et package-lock.json si présent)
-   - Cargo.toml
-   - pyproject.toml
-   - VERSION
-   - README.md (badges, section version si présente)
-   - Tout autre fichier pertinent trouvé
+5. Met à jour les fichiers de version :
+   - `package.json` : utiliser `Edit` pour modifier le champ `"version"`
+   - `package-lock.json` : si présent, lancer `npm install --package-lock-only` (ne PAS éditer manuellement)
+   - `pnpm-lock.yaml` : si présent, lancer `pnpm install --lockfile-only`
+   - `Cargo.toml`, `pyproject.toml`, `VERSION` : modifier avec `Edit`
+   - README.md : mettre à jour les badges ou sections version si présentes
 
 6. Génère/Met à jour le CHANGELOG.md si présent :
    - Ajoute une nouvelle section avec la date
@@ -72,6 +68,4 @@ Bump la version du projet selon le semantic versioning :
    git diff --stat
    ```
 
-8. NE PAS commit automatiquement - l'utilisateur fera `/push` s'il valide
-
-Note : Si l'utilisateur spécifie explicitement le type (ex: `/bump major`), utilise ce type au lieu de l'analyse automatique.
+8. NE PAS commit automatiquement — l'utilisateur fera `/push` s'il valide
