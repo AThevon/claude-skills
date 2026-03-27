@@ -25,6 +25,6 @@ Corrige TOUTES les erreurs de lint sans exception :
 4. Corrige manuellement ce qui reste
 
 5. Relance jusqu'à 0 erreurs/warnings
-   - **Max 3 tentatives.** Si les erreurs persistent après 3 cycles de correction, arrête et fais un récap des erreurs restantes à l'utilisateur.
+   - **Max 5 tentatives.** Si les erreurs persistent après 5 cycles de correction, arrête et fais un récap des erreurs restantes à l'utilisateur.
 
 6. Récap de toutes les corrections

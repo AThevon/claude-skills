@@ -20,7 +20,7 @@ Lance le build et corrige les erreurs :
    - Analyse chaque erreur
    - Corrige dans le code
    - Relance le build pour vérifier
-   - **Max 3 tentatives.** Si les erreurs persistent après 3 cycles de correction, arrête et fais un récap des erreurs restantes à l'utilisateur.
+   - **Max 5 tentatives.** Si les erreurs persistent après 5 cycles de correction, arrête et fais un récap des erreurs restantes à l'utilisateur.
 
 4. Une fois le build OK :
    - Fais un récap concis des corrections effectuées
