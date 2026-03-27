@@ -25,16 +25,19 @@ Ces commentaires doivent être nettoyés pour garder un code professionnel.
 ### 1. Récupérer les fichiers modifiés
 
 ```bash
-git diff --name-only main...HEAD
+git diff --name-only origin/main...HEAD
 ```
 
 ### 2. Analyser les commentaires ajoutés
 
 Pour chaque fichier, regarder les lignes ajoutées (`+`) qui contiennent des commentaires :
-- `//` pour JS/TS
-- `/* */` pour JS/TS/CSS
-- `#` pour Python/Shell/YAML
-- `{/* */}` pour JSX
+- `//` pour JS/TS/Go/Rust/Swift
+- `/* */` pour JS/TS/CSS/Go/Rust/Swift
+- `#` pour Python/Shell/YAML/Ruby
+- `{/* */}` pour JSX/TSX
+- `<!-- -->` pour HTML/Vue templates
+- `--` pour SQL/Lua
+- `///` pour Rust/C# doc comments
 
 ### 3. Détecter les commentaires problématiques
 
@@ -50,6 +53,9 @@ Pour chaque fichier, regarder les lignes ajoutées (`+`) qui contiennent des com
 | **Historique** | `// Avant on faisait X mais maintenant...` | Pas pertinent |
 | **Conversation** | `// Comme demandé, on gère ce cas` | Contextuel |
 | **TODO vagues** | `// TODO: améliorer plus tard` | Inutile |
+| **Généré par IA** | `// As suggested by...`, `// Based on the discussion...` | Contextuel |
+| **Justification IA** | `// Claude recommended...`, `// Per our conversation...` | Contextuel |
+| **Removed/Changed** | `// removed X`, `// was previously Y` | Historique |
 
 ### 4. Actions
 
