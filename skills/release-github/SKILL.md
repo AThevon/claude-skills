@@ -59,24 +59,33 @@ git rebase origin/$MAIN
 git push -u origin "$CURRENT" --force-with-lease
 ```
 
-Créer la PR avec titre et description **en anglais** :
+Créer la PR avec titre et description **en anglais**. Ne PAS utiliser de HEREDOC avec quotes simples (`<<'EOF'`) — construire le body en variable pour que les valeurs soient interpolées :
 
 ```bash
-gh pr create --title "Release vX.Y.Z" --body "$(cat <<'EOF'
-## Changes
+BODY="## Changes
 
-- list of changes from commits since last tag
+$(git log "$LAST_TAG"..HEAD --oneline --no-merges)
 
 ## Version
 
-LAST_TAG → vX.Y.Z
-EOF
-)"
+$LAST_TAG → vX.Y.Z"
+
+gh pr create --title "Release vX.Y.Z" --body "$BODY"
 ```
 
-Si on est directement sur main, skip la PR et passer à l'étape 6.
+Si on est directement sur main, skip la PR et passer à l'étape 8.
 
-## 6. Squash merge la PR
+## 6. Attendre que la CI passe
+
+Avant de merge, vérifier que les checks de la PR passent :
+
+```bash
+gh pr checks --watch --fail-fast
+```
+
+Si la CI échoue → informer l'utilisateur et STOP. Ne PAS merger une PR avec CI rouge.
+
+## 7. Squash merge la PR
 
 Demander confirmation avant de merger.
 
@@ -84,21 +93,26 @@ Demander confirmation avant de merger.
 gh pr merge --squash --delete-branch
 ```
 
-## 7. Créer le tag
+## 8. Créer le tag
 
 ```bash
 # Fetch le merge dans main
 git fetch origin $MAIN
+
+# Vérifier que le tag n'existe pas déjà
+if git rev-parse "vX.Y.Z" >/dev/null 2>&1; then
+  echo "Le tag vX.Y.Z existe déjà !" && STOP
+fi
 
 # Créer le tag sur le commit mergé
 git tag "vX.Y.Z" origin/$MAIN
 git push origin "vX.Y.Z"
 ```
 
-## 8. Vérifier la CI
+## 9. Vérifier la CI du tag
 
 ```bash
-# Vérifier si un workflow s'est déclenché
+# Vérifier si un workflow s'est déclenché sur le tag
 gh run list --limit 5
 ```
 
@@ -110,33 +124,37 @@ gh workflow list
 gh workflow run <workflow_name> --ref "vX.Y.Z"
 ```
 
-## 9. Créer la GitHub Release
+## 10. Créer la GitHub Release
 
 Générer le changelog depuis le dernier tag (en anglais) :
 
 ```bash
-git log "$LAST_TAG"..origin/$MAIN --oneline --no-merges
-```
+CHANGELOG=$(git log "$LAST_TAG"..origin/$MAIN --oneline --no-merges)
+REPO_URL=$(gh repo view --json url --jq '.url')
 
-```bash
+NOTES="## What's Changed
+
+$CHANGELOG
+
+**Full Changelog**: $REPO_URL/compare/$LAST_TAG...vX.Y.Z"
+
 gh release create "vX.Y.Z" \
   --title "vX.Y.Z" \
-  --notes "$(cat <<'NOTES'
-## What's Changed
-
-- change 1
-- change 2
-
-**Full Changelog**: https://github.com/OWNER/REPO/compare/LAST_TAG...vX.Y.Z
-NOTES
-)" \
+  --notes "$NOTES" \
   --latest
 ```
 
-## 10. Résumé final
+## 11. Résumé final
 
 Afficher :
 - Version : `LAST_TAG` → `vX.Y.Z`
 - PR : lien (si créée)
 - Release : lien
 - CI : statut
+
+## En cas d'échec
+
+- **Rebase échoue** → `git rebase --abort`, informer l'utilisateur
+- **CI échoue** → STOP, ne pas merger, laisser l'utilisateur corriger
+- **Tag existe déjà** → STOP, informer l'utilisateur (probablement un retry)
+- **Merge échoue** → STOP, afficher l'erreur, ne pas continuer vers le tag
