@@ -1,31 +1,38 @@
 ---
 name: copy-env
-description: Use when working in a git worktree and needing to copy .env or .env.local files from the main worktree
+description: Copie les fichiers .env depuis le worktree principal vers le worktree courant
 allowed-tools: Bash, Read, Glob
 ---
 
 Copie les fichiers .env depuis le worktree principal vers le worktree courant.
 
-1. Vérifie qu'on est dans un worktree (pas le main) :
+1. Vérifie qu'on est dans un worktree (pas le principal) :
    ```bash
    CURRENT=$(git rev-parse --show-toplevel)
-   MAIN_WT=$(git worktree list | grep '\[main\]' | awk '{print $1}')
+   # Le premier worktree listé est toujours le principal
+   MAIN_WT=$(git worktree list | head -1 | awk '{print $1}')
    ```
-   - Si `$CURRENT` == `$MAIN_WT` → erreur : "Tu es déjà dans le worktree principal."
-   - Si `$MAIN_WT` est vide → essayer avec `master` : `git worktree list | grep '\[master\]' | awk '{print $1}'`
+   - Si `$CURRENT` == `$MAIN_WT` → "Tu es déjà dans le worktree principal." et STOP
 
-2. Liste les fichiers .env dans le worktree principal :
+2. Liste tous les fichiers `.env*` dans le worktree principal :
    ```bash
-   ls -a "$MAIN_WT"/.env* 2>/dev/null
+   find "$MAIN_WT" -maxdepth 1 -name ".env*" -type f
    ```
+   - Si aucun fichier → informer l'utilisateur et STOP
 
-3. S'il n'y a aucun fichier .env → informe l'utilisateur et stop.
-
-4. S'il y a des fichiers, copie-les :
+3. Copie dynamiquement tous les `.env*` trouvés :
    ```bash
-   cp "$MAIN_WT/.env" "$CURRENT/.env" 2>/dev/null
-   cp "$MAIN_WT/.env.local" "$CURRENT/.env.local" 2>/dev/null
+   for f in "$MAIN_WT"/.env*; do
+     [ -f "$f" ] && cp "$f" "$CURRENT/$(basename "$f")"
+   done
    ```
-   Copier uniquement les fichiers qui existent côté main.
+   Cela couvre `.env`, `.env.local`, `.env.development`, `.env.staging`, `.env.test`, etc.
 
-5. Confirme les fichiers copiés avec un résumé.
+4. Si le projet est un monorepo (sous-dossiers avec leurs propres `.env`) :
+   ```bash
+   # Chercher les .env dans les sous-dossiers apps/ et packages/
+   find "$MAIN_WT" -path "*/apps/*/.env*" -o -path "*/packages/*/.env*" | grep -v node_modules
+   ```
+   Si trouvés → reproduire la même structure dans le worktree courant et copier.
+
+5. Afficher un résumé des fichiers copiés.
