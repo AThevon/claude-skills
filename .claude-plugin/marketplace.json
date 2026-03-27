@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "athevon-skills",
-      "source": ".",
+      "source": "./",
       "description": "Collection de skills Claude Code — git workflow, code quality, creative coding, design"
     }
   ]
