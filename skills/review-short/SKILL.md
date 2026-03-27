@@ -12,7 +12,7 @@ Fais une code review CONCISE :
    ```
 
 2. Si PR existe : `gh pr diff`
-   Sinon : `git diff main...HEAD`
+   Sinon : `git diff origin/main...HEAD`
 
 3. Review en mode ultra-concis :
    - Liste uniquement les problèmes importants (bugs, sécu, perf)

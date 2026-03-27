@@ -21,5 +21,6 @@ Vérifie le lint et corrige les erreurs importantes :
    - Les warnings sans impact
 
 4. Relance le lint pour vérifier
+   - **Max 3 tentatives.** Si les erreurs persistent après 3 cycles de correction, arrête et fais un récap des erreurs restantes à l'utilisateur.
 
 5. Récap concis de ce qui a été corrigé

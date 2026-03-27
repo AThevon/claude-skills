@@ -17,7 +17,7 @@ Fais une code review complète :
 
 3. Si pas de PR :
    - Trouve la branche principale (main ou master)
-   - Compare avec le point de création : `git log main..HEAD --oneline` et `git diff main...HEAD`
+   - Compare avec le point de création : `git log origin/main..HEAD --oneline` et `git diff origin/main...HEAD`
    - Review ces changements
 
 4. Dans ta review, analyse :

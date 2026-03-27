@@ -27,19 +27,19 @@ Avant tout, clarifie avec l'utilisateur :
 Lance le design system generator pour obtenir les recommandations complètes :
 
 ```bash
-python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<product_type> <industry> <keywords>" --design-system -p "<Project Name>"
+python3 ~/.claude/plugins/athevon-skills/skills/ui-ux-pro-max/scripts/search.py "<product_type> <industry> <keywords>" --design-system -p "<Project Name>"
 ```
 
 Complète avec des recherches ciblées si besoin :
 ```bash
 # Styles spécifiques
-python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --domain style
+python3 ~/.claude/plugins/athevon-skills/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --domain style
 # Typographie
-python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --domain typography
+python3 ~/.claude/plugins/athevon-skills/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --domain typography
 # Palettes couleur
-python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --domain color
+python3 ~/.claude/plugins/athevon-skills/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --domain color
 # Guidelines stack
-python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --stack <stack>
+python3 ~/.claude/plugins/athevon-skills/skills/ui-ux-pro-max/scripts/search.py "<keywords>" --stack <stack>
 ```
 
 ## Phase 3 — Mockups visuels (Google Stitch)
