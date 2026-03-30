@@ -1,8 +1,19 @@
 ---
 name: push
-description: Add, commit et push les changements
-allowed-tools: Bash, Read, Grep
+description: Add, commit et push les changements. Ajouter "?" pour activer le mode garde-fou qui analyse la légitimité des changements avant de push.
+allowed-tools: Bash, Read, Grep, Glob, AskUserQuestion
 ---
+
+# Mode
+
+Détecter le mode selon l'invocation :
+
+- `/push` ou `/push <message>` → **mode CONFIANT** (comportement standard)
+- `/push?` → **mode GARDE-FOU** (analyse de légitimité avant push)
+
+---
+
+# Mode CONFIANT (`/push`)
 
 Commit et push les changements en cours :
 
@@ -42,3 +53,95 @@ Commit et push les changements en cours :
    ```
 
 6. Confirme le push avec le lien si disponible
+
+---
+
+# Mode GARDE-FOU (`/push?`)
+
+Version prudente. Analyse les changements en profondeur avant de décider si on push ou pas.
+
+**Philosophie** : sceptique — vérifie que les changements sont cohérents, complets et intentionnels.
+
+## 1. État des lieux
+
+```bash
+git status
+git branch --show-current
+```
+
+- Si aucun changement → informer et STOP
+- Si sur `main`/`master` → avertir "Tu es sur main, tu es sûr de vouloir push ici ?" et attendre confirmation avant de continuer
+
+## 2. Inventaire des changements
+
+Catégoriser TOUS les fichiers modifiés/ajoutés/supprimés :
+
+```bash
+git diff --cached --name-status   # staged
+git diff --name-status             # unstaged
+git status --porcelain | grep '^??' # untracked
+```
+
+## 3. Analyse de légitimité
+
+Lire les diffs et évaluer chaque fichier :
+
+```bash
+git diff --cached
+git diff
+```
+
+**Critères :**
+
+| Check | Détail | Verdict |
+|-------|--------|---------|
+| **Fichiers suspects** | `.env`, credentials, secrets, tokens, clés API, `.pem`, `.key` | 🚫 BLOQUER |
+| **Fichiers accidentels** | `.DS_Store`, `*.log`, `*.tmp`, `node_modules/`, `dist/`, `build/` | 🚫 BLOQUER |
+| **Conflits non résolus** | `<<<<<<<`, `=======`, `>>>>>>>` | 🚫 BLOQUER |
+| **Debug oublié** | `console.log`, `debugger`, `print()` ajoutés (hors tests) | ❓ DEMANDER |
+| **Code commenté** | Gros blocs de code commenté ajoutés | ❓ DEMANDER |
+| **TODO orphelins** | `TODO`, `FIXME`, `HACK`, `XXX` ajoutés | ❓ DEMANDER |
+| **Fichiers hors scope** | Changements dans des fichiers sans rapport entre eux | ❓ DEMANDER |
+| **Changements partiels** | Import sans utilisation, fonction déclarée jamais appelée | ❓ DEMANDER |
+
+## 4. Décision
+
+### ✅ PUSH — Tout est clean
+Les changements sont cohérents, pas de fichier suspect, pas de debug oublié.
+→ Procéder au staging, commit et push (même logique que le mode CONFIANT).
+
+### ❓ DEMANDER — Doute sur certains points
+Présenter un résumé structuré :
+
+```
+## Analyse des changements
+
+### ✅ OK
+- path/to/file.ts — description courte
+
+### ⚠️ Points d'attention
+- path/to/other.ts:42 — console.log() de debug encore présent
+- path/to/thing.ts — semble hors scope du reste
+
+### Verdict : tu veux que je push quand même ?
+```
+
+Attendre la réponse explicite avec AskUserQuestion.
+- Si oui → stage, commit, push
+- Si non → STOP, lister ce qu'il faudrait corriger
+
+### 🚫 BLOQUER — Changements problématiques
+Expliquer clairement pourquoi et STOP. Pas de question, pas de push.
+
+```
+## ⛔ Push refusé
+
+- .env.local modifié — contient potentiellement des secrets
+- Marqueurs de conflit dans src/lib/auth.ts
+
+Corrige ces points et relance /push?
+```
+
+## 5. Commit et push (si autorisé)
+
+Même étapes que le mode CONFIANT (staging sélectif, message conventionnel, push avec -u si besoin).
