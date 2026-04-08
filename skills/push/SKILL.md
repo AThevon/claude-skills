@@ -1,6 +1,6 @@
 ---
 name: push
-description: Add, commit et push les changements. Ajouter "?" pour activer le mode garde-fou qui analyse la légitimité des changements avant de push.
+description: Add, commit et push les changements. Ajouter "?" pour le mode garde-fou, "!" pour forcer sans confirmation même sur main.
 allowed-tools: Bash, Read, Grep, Glob, AskUserQuestion
 ---
 
@@ -9,6 +9,7 @@ allowed-tools: Bash, Read, Grep, Glob, AskUserQuestion
 Détecter le mode selon l'invocation :
 
 - `/push` ou `/push <message>` → **mode CONFIANT** (comportement standard)
+- `/push!` ou `/push! <message>` → **mode FORCE** (push même sur main sans demander confirmation)
 - `/push?` → **mode GARDE-FOU** (analyse de légitimité avant push)
 
 ---
@@ -22,7 +23,7 @@ Commit et push les changements en cours :
    git status
    ```
    - Si aucun changement (working tree clean) → informer l'utilisateur et STOP
-   - Si la branche courante est `main` ou `master` → avertir l'utilisateur "Tu es sur main, tu es sûr de vouloir push ici ?" et attendre confirmation avant de continuer
+   - Si la branche courante est `main` ou `master` → avertir l'utilisateur "Tu es sur main, tu es sûr de vouloir push ici ?" et attendre confirmation avant de continuer (utiliser `/push!` pour skip cette confirmation)
 
 2. Stage les fichiers modifiés et nouveaux (pas de `git add -A`) :
    ```bash
@@ -53,6 +54,21 @@ Commit et push les changements en cours :
    ```
 
 6. Confirme le push avec le lien si disponible
+
+---
+
+# Mode FORCE (`/push!`)
+
+Identique au mode CONFIANT mais **ne demande JAMAIS de confirmation**, même sur `main`/`master`. Push directement.
+
+1. Vérifie l'état :
+   ```bash
+   git status
+   ```
+   - Si aucun changement (working tree clean) → informer l'utilisateur et STOP
+   - Si sur `main`/`master` → continuer sans demander confirmation
+
+2. Stage, commit et push (mêmes étapes 2 à 6 que le mode CONFIANT)
 
 ---
 

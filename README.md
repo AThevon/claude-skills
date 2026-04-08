@@ -13,7 +13,7 @@ Collection de skills Claude Code — git workflow, code quality, creative coding
 
 ### Git workflow
 - **pr** — Crée une PR complète (rebase, push, create)
-- **push** — Add, commit et push les changements
+- **push** — Add, commit et push (`/push?` mode garde-fou, `/push!` force sans confirmation même sur main)
 - **rebase** — Rebase la branche actuelle sur main
 - **update-pr** — Met à jour le titre et la description d'une PR existante
 - **release-github** — Release GitHub complète et automatique
