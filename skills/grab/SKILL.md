@@ -55,21 +55,22 @@ Si l'argument n'est pas un alias, il est interprété comme chemin (absolu, rela
 
 ## Étape 2 - Lancer le script bash avec les valeurs parsées
 
-Remplace `<FOLDER>`, `<COUNT>`, `<OFFSET>` par les valeurs déterminées à l'étape 1, puis exécute :
+Remplace `<FOLDER>`, `<COUNT>`, `<OFFSET>` par les valeurs déterminées à l'étape 1, puis exécute la commande ci-dessous **telle quelle**. Le `--noprofile --norc` et l'usage systématique de `command` sont là pour neutraliser tout alias/fonction shell de l'utilisateur (eza, etc.) qui pourrait polluer la sortie.
 
 ```bash
-FOLDER="<FOLDER>" COUNT=<COUNT> OFFSET=<OFFSET> bash <<'GRAB_EOF'
+FOLDER="<FOLDER>" COUNT=<COUNT> OFFSET=<OFFSET> bash --noprofile --norc <<'GRAB_EOF'
 set -eu
+unalias -a 2>/dev/null || true
 
 detect_os() {
   if [[ "${OSTYPE:-}" == "darwin"* ]]; then echo "mac"
-  elif [[ -f /proc/version ]] && grep -qi microsoft /proc/version 2>/dev/null; then echo "wsl"
+  elif [[ -f /proc/version ]] && command grep -qi microsoft /proc/version 2>/dev/null; then echo "wsl"
   else echo "linux"; fi
 }
 OS=$(detect_os)
 
 if [[ "$OS" == "wsl" ]]; then
-  WIN_USER=$(cmd.exe /C "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
+  WIN_USER=$(cmd.exe /C "echo %USERNAME%" 2>/dev/null | command tr -d '\r\n')
   BASE="/mnt/c/Users/$WIN_USER"
 else
   BASE="$HOME"
@@ -78,80 +79,80 @@ fi
 resolve_folder() {
   local input="${1:-downloads}"
   local lower
-  lower=$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')
+  lower=$(command printf '%s' "$input" | command tr '[:upper:]' '[:lower:]')
   case "$lower" in
-    dl|downloads)   echo "$BASE/Downloads" ;;
-    desktop)        echo "$BASE/Desktop" ;;
-    docs|documents) echo "$BASE/Documents" ;;
-    pics|pictures)  echo "$BASE/Pictures" ;;
+    dl|downloads)   command printf '%s\n' "$BASE/Downloads" ;;
+    desktop)        command printf '%s\n' "$BASE/Desktop" ;;
+    docs|documents) command printf '%s\n' "$BASE/Documents" ;;
+    pics|pictures)  command printf '%s\n' "$BASE/Pictures" ;;
     ss|screenshots)
-      if   [[ "$OS" == "mac" ]]; then echo "$HOME/Desktop"
-      else                            echo "$BASE/Pictures/Screenshots"; fi ;;
-    videos)
-      if   [[ "$OS" == "mac" ]]; then echo "$BASE/Movies"
-      else                            echo "$BASE/Videos"; fi ;;
-    movies)
-      if   [[ "$OS" == "mac" ]]; then echo "$BASE/Movies"
-      else                            echo "$BASE/Videos"; fi ;;
-    music) echo "$BASE/Music" ;;
+      if   [[ "$OS" == "mac" ]]; then command printf '%s\n' "$HOME/Desktop"
+      else                            command printf '%s\n' "$BASE/Pictures/Screenshots"; fi ;;
+    videos|movies)
+      if   [[ "$OS" == "mac" ]]; then command printf '%s\n' "$BASE/Movies"
+      else                            command printf '%s\n' "$BASE/Videos"; fi ;;
+    music) command printf '%s\n' "$BASE/Music" ;;
     *)
-      if   [[ -d "$input" ]];        then echo "$input"
-      elif [[ -d "$BASE/$input" ]];  then echo "$BASE/$input"
-      elif [[ -d "$HOME/$input" ]];  then echo "$HOME/$input"
-      elif [[ -d "$PWD/$input" ]];   then echo "$PWD/$input"
-      else echo ""; fi ;;
+      if   [[ -d "$input" ]];        then command printf '%s\n' "$input"
+      elif [[ -d "$BASE/$input" ]];  then command printf '%s\n' "$BASE/$input"
+      elif [[ -d "$HOME/$input" ]];  then command printf '%s\n' "$HOME/$input"
+      elif [[ -d "$PWD/$input" ]];   then command printf '%s\n' "$PWD/$input"
+      else command printf '\n'; fi ;;
   esac
 }
 
 DIR=$(resolve_folder "$FOLDER")
 if [[ -z "$DIR" || ! -d "$DIR" ]]; then
-  echo "ERROR: dossier introuvable: $FOLDER" >&2
+  command printf 'ERROR: dossier introuvable: %s\n' "$FOLDER" >&2
   exit 1
 fi
 
 get_mtime() {
-  if [[ "$OS" == "mac" ]]; then stat -f '%m' "$1"
-  else                          stat -c '%Y' "$1"; fi
+  if [[ "$OS" == "mac" ]]; then command stat -f '%m' "$1"
+  else                          command stat -c '%Y' "$1"; fi
 }
 
-TMP=$(mktemp)
-trap 'rm -f "$TMP"' EXIT
+TMP=$(command mktemp)
+trap 'command rm -f "$TMP"' EXIT
 
 while IFS= read -r -d '' f; do
   mt=$(get_mtime "$f" 2>/dev/null) || continue
-  printf '%s\t%s\n' "$mt" "$f" >> "$TMP"
-done < <(find "$DIR" -maxdepth 1 -type f ! -name '.*' -print0 2>/dev/null)
+  command printf '%s\t%s\n' "$mt" "$f" >> "$TMP"
+done < <(command find "$DIR" -maxdepth 1 -type f ! -name '.*' -print0 2>/dev/null)
 
-TOTAL=$(wc -l < "$TMP" | tr -d ' ')
+TOTAL=$(command wc -l < "$TMP" | command tr -d ' ')
 if [[ "$TOTAL" -eq 0 ]]; then
-  echo "ERROR: aucun fichier dans $DIR" >&2
+  command printf 'ERROR: aucun fichier dans %s\n' "$DIR" >&2
   exit 1
 fi
 
 START=$((OFFSET + 1))
-RESULTS=$(sort -rn "$TMP" | tail -n +"$START" | head -n "$COUNT" | cut -f2-)
+RESULTS=$(command sort -rn "$TMP" | command tail -n +"$START" | command head -n "$COUNT" | command cut -f2-)
 
 if [[ -z "$RESULTS" ]]; then
-  echo "ERROR: offset trop grand ($OFFSET) pour $TOTAL fichier(s) dans $DIR" >&2
+  command printf 'ERROR: offset trop grand (%s) pour %s fichier(s) dans %s\n' "$OFFSET" "$TOTAL" "$DIR" >&2
   exit 1
 fi
 
-echo "Dossier: $DIR"
-echo "Total: $TOTAL fichier(s) | count=$COUNT offset=$OFFSET"
-echo "---"
-echo "$RESULTS"
+command printf 'Dossier: %s\n' "$DIR"
+command printf 'Total: %s fichier(s) | count=%s offset=%s\n' "$TOTAL" "$COUNT" "$OFFSET"
+command printf '===GRAB_PATHS===\n'
+command printf '%s\n' "$RESULTS"
+command printf '===GRAB_END===\n'
 GRAB_EOF
 ```
 
 ## Étape 3 - Lire et présenter les fichiers
 
-1. Récupère les chemins listés après `---` dans la sortie.
-2. Pour chaque fichier, utilise le tool **Read** pour le lire/afficher (Claude Code est multimodal pour les images, PDFs, etc.).
+1. Récupère les chemins entre les marqueurs `===GRAB_PATHS===` et `===GRAB_END===` (un chemin par ligne, dans l'ordre du plus récent au plus ancien).
+2. Pour chaque fichier, utilise **directement** le tool `Read` avec le chemin absolu. **Ne lance JAMAIS de commande shell auxiliaire** (`ls`, `file`, `cat`, etc.) pour vérifier le fichier - ces commandes peuvent être aliasées (eza, bat, ...) et polluer la conversation. Le `Read` tool suffit (il gère images, PDFs, texte).
 3. Si plusieurs fichiers : décris brièvement chacun.
 4. Demande à l'utilisateur ce qu'il veut en faire, ou enchaîne avec le contexte de la conversation s'il y en a un.
 
 ## Notes techniques
 
+- `bash --noprofile --norc` + `unalias -a` + `command <bin>` : isolation totale contre les alias/fonctions shell de l'utilisateur (eza remplaçant `ls`, etc.).
+- Marqueurs `===GRAB_PATHS===` / `===GRAB_END===` : parsing déterministe même si la sortie a du bruit avant/après.
 - Tri par `stat` cross-platform (BSD `stat -f` sur macOS, GNU `stat -c` sur Linux/WSL) - évite le bug `ls -t` sur NTFS via WSL.
 - `maxdepth 1` : pas de récursion, uniquement le dossier cible.
 - Ignore les fichiers cachés (`.DS_Store`, `.localized`, etc.).
